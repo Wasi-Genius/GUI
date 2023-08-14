@@ -13,5 +13,5 @@ https://github.com/Wasi-Genius/GUI/assets/103324585/9aeac2de-6b50-4bc9-bed1-6046
 
 ## **Image Viewer**:
 
-Still working on it...
+Still working on it... 🚧🛠️
 
