@@ -106,7 +106,7 @@ optimal_image_size_var_rotate = None
 
 # noinspection PyGlobalUndefined
 def file_button_func():
-    global opening_image, photo_label, image_file, photo, i, is_image_normal, is_image_rotated, optimal_image_size_var, optimal_image_size_var_rotate, is_image_there, rotate_label, current_image, preview_photos, before_image, before_image_label, after_image, after_image_label, after_image_name, before_image_index, dark_before_image_open, dark_after_image_open
+    global opening_image, photo_label, image_file, photo, i, is_image_normal, is_image_rotated, optimal_image_size_var, optimal_image_size_var_rotate, is_image_there, rotate_label, current_image, preview_photos, before_image, before_image_label, after_image, after_image_label, after_image_name, before_image_index, dark_before_image_open, dark_after_image_open, after_image_index
     i = 0
     filetypes = (
         ('All Files', '*'),
@@ -196,9 +196,9 @@ def file_button_func():
 
 
 # Arrow binding:
-
+# Up Arrow Binding
 def up_arrow_function(event=None):
-    global preview_photos, current_image, before_image_index, dark_before_image_open, dark_after_image_open
+    global preview_photos, before_image_index, after_image_index, dark_before_image_open, dark_after_image_open
 
     new_image = CTkImage(dark_image=dark_before_image_open, size=optimal_image_size(dark_before_image_open, False))
 
@@ -208,27 +208,59 @@ def up_arrow_function(event=None):
 
     current_image.configure(image=new_image_preview)
 
-    try:
-        new_dark_before_image_open = Image.open(preview_photos[before_image_index - 1])
-        before_image.configure(dark_image=new_dark_before_image_open)
-    except IndexError:
-        new_dark_before_image_open = Image.open(preview_photos[-1])
-        before_image.configure(dark_image=new_dark_before_image_open)
+    before_image_index -= 1
+    after_image_index -= 1
 
+    if before_image_index < 0:
+        before_image_index = len(preview_photos) - 1
+
+    if after_image_index < 0:
+        after_image_index = len(preview_photos) - 1
+
+    new_dark_before_image_open = Image.open(preview_photos[before_image_index])
     dark_before_image_open = new_dark_before_image_open
+    before_image.configure(dark_image=new_dark_before_image_open)
 
-    new_dark_after_image_open = Image.open(preview_photos[before_image_index + 1])
-
+    new_dark_after_image_open = Image.open(preview_photos[after_image_index])
     dark_after_image_open = new_dark_after_image_open
-
     after_image.configure(dark_image=new_dark_after_image_open)
-
-    before_image_index = before_image_index - 1
-
-    # ---------------------------------------
 
 
 root.bind('<Up>', up_arrow_function)
+root.update()
+
+
+# Down Arrow Binding
+def down_arrow_function(event=None):
+    global preview_photos, before_image_index, after_image_index, dark_before_image_open, dark_after_image_open
+
+    new_image = CTkImage(dark_image=dark_after_image_open, size=optimal_image_size(dark_after_image_open, False))
+
+    new_image_preview = CTkImage(dark_image=dark_after_image_open, size=(200, 300))
+
+    photo_label.configure(image=new_image)
+
+    current_image.configure(image=new_image_preview)
+
+    before_image_index += 1
+    after_image_index += 1
+
+    if before_image_index >= len(preview_photos):
+        before_image_index = 0
+
+    if after_image_index >= len(preview_photos):
+        after_image_index = 0
+
+    new_dark_before_image_open = Image.open(preview_photos[before_image_index])
+    dark_before_image_open = new_dark_before_image_open
+    before_image.configure(dark_image=new_dark_before_image_open)
+
+    new_dark_after_image_open = Image.open(preview_photos[after_image_index])
+    dark_after_image_open = new_dark_after_image_open
+    after_image.configure(dark_image=new_dark_after_image_open)
+
+
+root.bind('<Down>', down_arrow_function)
 root.update()
 
 file_button = CTkButton(tool_frame, text='File Manager', command=file_button_func)
@@ -323,39 +355,33 @@ def delete_image_func():
 delete_image_button = CTkButton(tool_frame, text='Delete Image', command=delete_image_func)
 delete_image_button.grid(row=2, column=0, sticky='nsew', padx=5, pady=5)
 
-
-# ------- Finding the optimal size for full screen images
-def optimal_fullscreen_size(image):
-    if image.width > 1910 and image.height > 1070:
-        return 1300, 700
-    elif image.width > 1910 and image.height < 1070:
-        return 1300, image.height
-    elif image.height > 1070 and image.width < 1910:
-        return image.width, 700
-    else:
-        return 1200, image.height
-
-
+# ------- Enter Full Screen Button
 in_full_screen = False
 
 
-# ------- Enter Full Screen Button
 def enter_full_screen_func():
     global is_image_normal, rotated_image, rotate_label, is_image_rotated, in_full_screen, false_rotation_size, degree_image
     if is_image_there:
         image_preview_frame.grid_forget()
         tool_frame.grid_forget()
+        photo_frame.configure(border_width=0)
         root.after(1, root.wm_attributes, '-fullscreen', True)
 
+        screen_width = root.winfo_screenwidth()
+        screen_height = root.winfo_screenheight()
+
         if is_image_normal:
-            new_fullscreen_image = CTkImage(opening_image, size=optimal_fullscreen_size(opening_image))
+            new_fullscreen_image = CTkImage(opening_image, size=(screen_width, screen_height))
             photo_label.configure(image=new_fullscreen_image)
+            photo_label.pack(fill="both", expand=True)
 
         else:
-            new_fullscreen_image = CTkImage(degree_image, size=optimal_fullscreen_size(opening_image))
+            new_fullscreen_image = CTkImage(degree_image, size=(screen_width, screen_height))
             rotate_label.configure(image=new_fullscreen_image)
+            rotate_label.pack(fill="both", expand=True)
 
     else:
+        print("No image found, cannot enter full screen.")
         ms.showwarning('No Image', 'An image is needed to go into full screen, please choose an image!')
 
     in_full_screen = True
@@ -367,8 +393,12 @@ enter_fullscreen_button.grid(row=3, column=0, sticky='nsew', padx=5, pady=5)
 
 # ------ Exiting full screen
 def exit_full_screen_mode(event=None):
-    global in_full_screen, is_image_normal, degree_image
+    global in_full_screen, is_image_normal, degree_image, optimal_image_size_var, optimal_image_size_var_rotate
+    photo_frame.grid_propagate(True)
+    optimal_image_size_var = optimal_image_size(opening_image, False)
+    optimal_image_size_var_rotate = optimal_image_size(opening_image, True)
     if in_full_screen:
+        photo_frame.configure(border_width=5)
         set_appearance_mode("light")
         root.attributes('-fullscreen', False)
         set_appearance_mode("dark")
@@ -381,7 +411,9 @@ def exit_full_screen_mode(event=None):
                 pass
 
             photo.configure(size=optimal_image_size(opening_image, False))
-            photo_label.configure(image=photo, width=500)
+            photo_label.configure(image=photo)
+
+            photo_label.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
 
         else:
             photo_label.destroy()
@@ -389,6 +421,8 @@ def exit_full_screen_mode(event=None):
                 new_fullscreen_image = CTkImage(degree_image, size=optimal_image_size(degree_image, False))
             else:
                 new_fullscreen_image = CTkImage(degree_image, size=optimal_image_size(degree_image, True))
+
+            rotate_label.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
             rotate_label.configure(image=new_fullscreen_image, width=500)
 
         tool_frame.grid(row=0, column=0, sticky='nsew', padx=10, pady=10)
@@ -406,14 +440,16 @@ root.bind('<KeyPress-Escape>', exit_full_screen_mode)
 
 def zoom_in():
     global is_image_normal, is_image_rotated, optimal_image_size_var, optimal_image_size_var_rotate, is_image_there
+    print("Zooming in...")
     if is_image_there:
         photo_frame.grid_propagate(False)
         try:
             if is_image_rotated:
+                print("Zooming in on rotated image...")
                 optimal_image_size_var_rotate = tuple(val + 40 for val in optimal_image_size_var_rotate)
                 rotated_image.configure(size=optimal_image_size_var_rotate)
-
             else:
+                print("Zooming in on normal image...")
                 optimal_image_size_var = tuple(val + 40 for val in optimal_image_size_var)
                 if is_image_normal:
                     photo.configure(size=optimal_image_size_var)
@@ -421,6 +457,7 @@ def zoom_in():
         except NameError:
             pass
     else:
+        print("No image found, cannot zoom in.")
         ms.showerror('No Image Found', 'No image was found, please try again.')
 
 
@@ -460,14 +497,16 @@ zoom_in_button.bind("<ButtonRelease-1>", stop_zoom_in)
 
 def zoom_out():
     global is_image_normal, is_image_rotated, optimal_image_size_var, optimal_image_size_var_rotate, is_image_there
+    print("Zooming out...")
     if is_image_there:
         photo_frame.grid_propagate(False)
         try:
             if is_image_rotated:
+                print("Zooming out on rotated image...")
                 optimal_image_size_var_rotate = tuple(val - 40 for val in optimal_image_size_var_rotate)
                 rotated_image.configure(size=optimal_image_size_var_rotate)
-
             else:
+                print("Zooming out on normal image...")
                 optimal_image_size_var = tuple(val - 40 for val in optimal_image_size_var)
                 if is_image_normal:
                     photo.configure(size=optimal_image_size_var)
@@ -475,7 +514,8 @@ def zoom_out():
         except NameError:
             pass
     else:
-        ms.showerror('No Image Found', 'No image was found, please try again.')
+        print("No image found, cannot zoom out.")
+        ms.showerror('No Image Found', 'No image Found')
 
 
 second_repeat_zoom = None
@@ -511,15 +551,17 @@ zoom_out_button.bind("<ButtonRelease-1>", stop_zoom_out)
 #########################################################################
 
 # Bugs:
-# - After you zoom in and zoom out, the full screen image isn't the correct size and if when you come out of full screen you cannot zoom back in or zoom out.
-# - Zoom in and Zoom out dont work when you use the arrow bindings!
+# - The zoom in and zoom out dont get reset when you go out of full screen
+# - The preview window doesn't actually change the real image (the one that gets worked on by the functions)
+# - Zoom in and Zoom out don't work when you use the arrow bindings!
+
 
 # To Do:
-# - Bind the up and down arrow keys to go through the images
+
 # - - Maybe also have arrow icons on the screen (top and bottom of the photo frame, if rotated to the side of the image, top and bottom) that users can click on to go through the images.
 # - - The arrows appear for a second when users click on the arrow keys or when they hover over them with their mouse, they disappear a moment later.
 
-# - Glamify everything (add icons etc)
+# - Glamify everything (add icons etc.)
 
 # - Calculate the perfect sizes for any computer screen size?
 # - Optimize everything, try to get the number of code you have down.
